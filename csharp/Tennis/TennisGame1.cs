@@ -1,11 +1,23 @@
+using System;
+using System.Collections.Generic;
+
 namespace Tennis
 {
     public class TennisGame1 : ITennisGame
     {
-        private int m_score1 = 0;
-        private int m_score2 = 0;
-        private string player1Name;
-        private string player2Name;
+        private static readonly Dictionary<int, string> PointDescriptions =
+            new Dictionary<int, string>
+            {
+                { 0, "Love" },
+                { 1, "Fifteen" },
+                { 2, "Thirty" },
+                { 3, "Forty" }
+            };
+
+        private int player1Points = 0;
+        private int player2Points = 0;
+        private readonly string player1Name;
+        private readonly string player2Name;
 
         public TennisGame1(string player1Name, string player2Name)
         {
@@ -15,67 +27,75 @@ namespace Tennis
 
         public void WonPoint(string playerName)
         {
-            if (playerName == "player1")
-                m_score1 += 1;
+            if (playerName == this.player1Name)
+            {
+                player1Points += 1;
+            }
+            else if (playerName == this.player2Name)
+            {
+                player2Points += 1;
+            }
             else
-                m_score2 += 1;
+            {
+                throw new ArgumentException(nameof(playerName));
+            }
         }
-
+        
         public string GetScore()
         {
-            string score = "";
-            var tempScore = 0;
-            if (m_score1 == m_score2)
+            if (IsDeuce())
             {
-                switch (m_score1)
-                {
-                    case 0:
-                        score = "Love-All";
-                        break;
-                    case 1:
-                        score = "Fifteen-All";
-                        break;
-                    case 2:
-                        score = "Thirty-All";
-                        break;
-                    default:
-                        score = "Deuce";
-                        break;
+                return "Deuce";
+            }
 
-                }
-            }
-            else if (m_score1 >= 4 || m_score2 >= 4)
+            if (IsRegularTie())
             {
-                var minusResult = m_score1 - m_score2;
-                if (minusResult == 1) score = "Advantage player1";
-                else if (minusResult == -1) score = "Advantage player2";
-                else if (minusResult >= 2) score = "Win for player1";
-                else score = "Win for player2";
+                return $"{PointDescriptions[player1Points]}-All";
             }
-            else
+
+            if (IsRegularPoints())
             {
-                for (var i = 1; i < 3; i++)
-                {
-                    if (i == 1) tempScore = m_score1;
-                    else { score += "-"; tempScore = m_score2; }
-                    switch (tempScore)
-                    {
-                        case 0:
-                            score += "Love";
-                            break;
-                        case 1:
-                            score += "Fifteen";
-                            break;
-                        case 2:
-                            score += "Thirty";
-                            break;
-                        case 3:
-                            score += "Forty";
-                            break;
-                    }
-                }
+                return $"{PointDescriptions[player1Points]}-{PointDescriptions[player2Points]}";
             }
-            return score;
+
+            if (IsAdvantage())
+            {
+                return $"Advantage {GetHighestPointsPlayerName()}";
+            }
+
+            return $"Win for {GetHighestPointsPlayerName()}";
+        }
+
+        private string GetHighestPointsPlayerName()
+        {
+            var highestPointsPlayerName = player1Name;
+
+            if (player2Points > player1Points)
+            {
+                highestPointsPlayerName = player2Name;
+            }
+
+            return highestPointsPlayerName;
+        }
+
+        private bool IsAdvantage()
+        {
+            return Math.Abs(player1Points - player2Points) == 1;
+        }
+
+        private bool IsRegularPoints()
+        {
+            return player1Points <= 3 && player2Points <= 3;
+        }
+
+        private bool IsRegularTie()
+        {
+            return player1Points == player2Points;
+        }
+
+        private bool IsDeuce()
+        {
+            return player1Points == player2Points && player1Points >= 3;
         }
     }
 }
